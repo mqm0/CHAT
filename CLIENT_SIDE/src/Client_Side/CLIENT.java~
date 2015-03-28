@@ -1,0 +1,130 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package Client_Side;
+import static Client_Side.CLIENT_GUI.conversation;
+import java.io.*;
+import java.net.*;
+import java.util.Scanner;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.UnsupportedAudioFileException;
+import javax.swing.JOptionPane;
+
+/**
+ *
+ * @author muhammad
+ */
+public class CLIENT implements Runnable{
+    
+   Socket SOCK;
+   Scanner INPUT;
+   //Scanner SEND= new Scanner(System.in);
+   PrintWriter OUT;
+   
+   public CLIENT(Socket x){
+       this.SOCK= x;
+   }
+
+   
+    public void run() {
+        try {
+            try {
+                INPUT= new Scanner(SOCK.getInputStream());
+                OUT= new PrintWriter(SOCK.getOutputStream());
+                OUT.flush();
+                CheckStream();
+                
+            } finally {
+                SOCK.close();
+            }
+        } catch (Exception e) {
+            System.err.println(e);
+        }
+    }
+
+    public void DISCONNECT() throws IOException{
+        OUT.println(CLIENT_GUI.UserName+ " has disconnected");
+        OUT.flush();
+        SOCK.close();
+        JOptionPane.showMessageDialog(null, "You disconnected");
+        System.exit(0);
+    }
+    
+    public void RECEIVE(){
+        if(INPUT.hasNext()){
+            String MESSAGE= INPUT.nextLine();
+            
+            if(MESSAGE.contains("#?!")){
+                String TMP1= MESSAGE.substring(3);
+                TMP1= TMP1.replace("[", "").replace("]", "");
+                
+                String[] CurrentUsers= TMP1.split(", ");
+                for(int i= 0;i< CurrentUsers.length;i++){
+                    if(CurrentUsers[i].equals(CLIENT_GUI.UserName))
+                        CurrentUsers[i]= "<"+CurrentUsers[i]+">";
+                    
+                }
+                CLIENT_GUI.online.setListData(CurrentUsers);
+                
+            
+            }else
+                
+                CLIENT_GUI.conversation.append(MESSAGE.
+                        replace(":)", "☺").
+                        replace("><", "ᕙ(⇀‸↼‶)ᕗ").
+                        replace("<3", "❤").
+                        replace("3_3", "(♥‿♥)").
+                        replace(":*", "ƪ(♥ﻬ♥)ʃ").
+                        replace(":'(", "(╥_╥)").
+                        replace("-_-", "(-̮̮̃-̃)")+"\n");
+                conversation.setCaretPosition(conversation.getText().length());
+                playSound();
+                
+        }
+    }
+    
+    public void SERV(String Service){
+        OUT.println(CLIENT_GUI.UserName+ ": "+ Service);
+        OUT.flush();
+    }
+    
+    public void SEND_PRIVATE(String X){
+        //OUT.println(CLIENT_GUI.UserName+ ": "+ X);
+        OUT.println(X);
+        OUT.flush();
+        PRIVATE_MESSAGE.msg.setText("");
+        
+    }
+    
+    public void SEND(String X){
+        OUT.println(CLIENT_GUI.UserName+ ": "+ X);
+        //OUT.println(X);
+        OUT.flush();
+        CLIENT_GUI.message.setText("");
+        
+    }
+    
+
+    
+    public void CheckStream(){
+        while (true) {            
+            RECEIVE();
+        }
+    }
+    
+    public void playSound() {
+    try {
+        AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(new File("/home/muhammad/NetBeansProjects/IRC_CLIENT_INTERFACE/src/bip.wav").getAbsoluteFile());
+        Clip clip = AudioSystem.getClip();
+        clip.open(audioInputStream);
+        clip.start();
+    } catch(UnsupportedAudioFileException | IOException | LineUnavailableException ex) {
+        System.out.println("Error with playing sound.");
+    }
+}
+}
